@@ -1,0 +1,39 @@
+{
+  "sacn": {
+    "inputUniverse": 1,
+    "outputUniverses": [1, 2],
+    "bindAddress": "0.0.0.0",
+    "refreshRateMs": 100
+  },
+  "osc": {
+    "listenAddress": "0.0.0.0",
+    "listenPort": 9000,
+    "companionAddress": "127.0.0.1",
+    "feedbackPort": 9001
+  },
+  "zones": [
+    { "id": 1, "universe": 2, "channel": 1 },
+    { "id": 2, "universe": 2, "channel": 2 },
+    { "id": 3, "universe": 2, "channel": 3 },
+    { "id": 4, "universe": 2, "channel": 4 }
+  ],
+  "color": {
+    "universe": 2,
+    "channels": [5, 6, 7],
+    "wrap": true,
+    "sequence": [
+      { "name": "Red", "values": [255, 0, 0] },
+      { "name": "Orange", "values": [255, 128, 0] },
+      { "name": "Yellow", "values": [255, 255, 0] },
+      { "name": "Green", "values": [0, 255, 0] },
+      { "name": "Blue", "values": [0, 0, 255] },
+      { "name": "Purple", "values": [128, 0, 255] },
+      { "name": "Pink", "values": [255, 0, 128] },
+      { "name": "White", "values": [255, 255, 255] },
+      { "name": "Split 1", "values": [255, 0, 0] },
+      { "name": "Split 2", "values": [0, 255, 0] },
+      { "name": "Split 3", "values": [0, 0, 255] },
+      { "name": "Split 4", "values": [255, 255, 255] }
+    ]
+  }
+}

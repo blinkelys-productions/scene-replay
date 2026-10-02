@@ -1,0 +1,6 @@
+node_modules/
+dist/
+logs/
+data/scenes.json
+data/scenes.json.tmp
+.env
