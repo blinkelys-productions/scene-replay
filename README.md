@@ -26,7 +26,7 @@ The defaults map `/zone/1`–`/zone/4` to Universe 2 channels 1–4. The color s
 
 ## OSC API
 
-OSC listens on UDP `0.0.0.0:9000` by default. Companion feedback is sent to `127.0.0.1:9001`; change those values to match the Companion host and feedback listener.
+Companion and Stream Deck+ run on the same machine as this application, which otherwise has no network beyond the sACN lighting node. OSC therefore listens on loopback only, `127.0.0.1:9000` by default, and feedback is sent to `127.0.0.1:9001`. Change those addresses only if Companion ever moves to a separate host.
 
 | Address | Note |
 | --- | --- |
@@ -76,11 +76,11 @@ For a straightforward deployment without a GUI, install Node.js on the permanent
 5. In task settings, enable restart on failure and set the restart interval and retry count.
 6. Grant the task account write access to the data and log directories and access to the lighting network.
 
-Using a dedicated service account and Task Scheduler's restart policy avoids requiring an interactive desktop session. Verify multicast routing, Windows Firewall rules for UDP 5568 and the configured OSC ports, and the correct network adapter before connecting fixtures. Restrict OSC access to the trusted control network.
+Using a dedicated service account and Task Scheduler's restart policy avoids requiring an interactive desktop session. Verify multicast routing, Windows Firewall rules for UDP 5568, and the correct network adapter before connecting fixtures. OSC only needs to be reachable from Companion/Stream Deck+ on the same machine, so no firewall rule is needed for the OSC ports.
 
 ## Docker deployment
 
-The provided Docker Compose setup uses Linux host networking because sACN depends on UDP multicast and OSC should share the lighting network directly. It persists captured scenes and logs in Docker-managed volumes and mounts the host JSON configuration read-only.
+The provided Docker Compose setup uses Linux host networking because sACN depends on UDP multicast, and OSC loopback traffic from a Companion instance on the same host needs to reach the container without a bridge network in between. It persists captured scenes and logs in Docker-managed volumes and mounts the host JSON configuration read-only.
 
 ```sh
 cp .env.example .env
@@ -88,7 +88,7 @@ docker compose up --build -d
 docker compose logs -f scene-replay
 ```
 
-Set `sacn.bindAddress` in `config/config.json` to the host's lighting-network IPv4 address when the machine has multiple network interfaces; that address selects the multicast input/output interface. Set `osc.companionAddress` and `osc.feedbackPort` to the Companion machine and its feedback listener. OSC listen and sACN use the existing configured ports. To use another config file, set `SCENE_REPLAY_CONFIG_FILE` in `.env`. `SCENE_REPLAY_LOG_LEVEL` can be set there to `DEBUG`, `INFO`, `WARN`, or `ERROR`.
+Set `sacn.bindAddress` in `config/config.json` to the host's lighting-network IPv4 address when the machine has multiple network interfaces; that address selects the multicast input/output interface. The default `osc.listenAddress`/`companionAddress` of `127.0.0.1` only works with host networking because loopback traffic does not cross a Docker bridge network; keep Companion running directly on the host (not in a separate container) unless you also change these addresses and the network mode. To use another config file, set `SCENE_REPLAY_CONFIG_FILE` in `.env`. `SCENE_REPLAY_LOG_LEVEL` can be set there to `DEBUG`, `INFO`, `WARN`, or `ERROR`.
 
 The Compose service restarts unless stopped and handles SIGTERM for a graceful shutdown. Data and logs remain in named volumes across container replacement; inspect them with `docker compose exec scene-replay ...` or back them up with standard Docker volume backup procedures. `docker compose down` preserves these volumes; `docker compose down -v` deletes them, including all captured scenes.
 
