@@ -4,3 +4,4 @@ logs/
 data/scenes.json
 data/scenes.json.tmp
 .env
+.env.local

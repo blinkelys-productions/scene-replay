@@ -77,6 +77,22 @@ For a straightforward deployment without a GUI, install Node.js on the permanent
 
 Using a dedicated service account and Task Scheduler's restart policy avoids requiring an interactive desktop session. Verify multicast routing, Windows Firewall rules for UDP 5568 and the configured OSC ports, and the correct network adapter before connecting fixtures. Restrict OSC access to the trusted control network.
 
+## Docker deployment
+
+The provided Docker Compose setup uses Linux host networking because sACN depends on UDP multicast and OSC should share the lighting network directly. It persists captured scenes and logs in Docker-managed volumes and mounts the host JSON configuration read-only.
+
+```sh
+cp .env.example .env
+docker compose up --build -d
+docker compose logs -f scene-replay
+```
+
+Set `sacn.bindAddress` in `config/config.json` to the host's lighting-network IPv4 address when the machine has multiple network interfaces; that address selects the multicast input/output interface. Set `osc.companionAddress` and `osc.feedbackPort` to the Companion machine and its feedback listener. OSC listen and sACN use the existing configured ports. To use another config file, set `SCENE_REPLAY_CONFIG_FILE` in `.env`. `SCENE_REPLAY_LOG_LEVEL` can be set there to `DEBUG`, `INFO`, `WARN`, or `ERROR`.
+
+The Compose service restarts unless stopped and handles SIGTERM for a graceful shutdown. Data and logs remain in named volumes across container replacement; inspect them with `docker compose exec scene-replay ...` or back them up with standard Docker volume backup procedures. `docker compose down` preserves these volumes; `docker compose down -v` deletes them, including all captured scenes.
+
+Host networking is supported by the Linux Docker Engine. Docker Desktop on Windows/macOS has different host-network and multicast behavior; verify sACN multicast reception and output on the target before using it for permanent control. If multicast is not available to the container, run the Node application directly on the Windows host or use a Linux host with host networking. Docker does not replace the need to validate the correct NIC, multicast routing, firewall rules, and Companion feedback address.
+
 ## Development notes
 
 The code keeps MA3 input, scene storage, and output buffers separate. The sACN receiver accepts Universe 1, merges equal-priority sources with HTP, and expires inactive sources. The sender publishes Universes 1 and 2 continuously and sends updated values immediately. There is no Art-Net, fixture patch, GUI, database, or fade engine.

@@ -1,0 +1,23 @@
+services:
+  scene-replay:
+    build:
+      context: .
+    image: scene-replay:local
+    container_name: scene-replay
+    restart: unless-stopped
+    init: true
+    network_mode: host
+    environment:
+      SCENE_REPLAY_HOME: /app
+      SCENE_REPLAY_CONFIG: /app/config/config.json
+      SCENE_REPLAY_DATA_DIR: /data
+      SCENE_REPLAY_LOG_DIR: /logs
+      SCENE_REPLAY_LOG_LEVEL: ${SCENE_REPLAY_LOG_LEVEL:-INFO}
+    volumes:
+      - ${SCENE_REPLAY_CONFIG_FILE:-./config/config.json}:/app/config/config.json:ro
+      - scene-replay-data:/data
+      - scene-replay-logs:/logs
+
+volumes:
+  scene-replay-data:
+  scene-replay-logs:
