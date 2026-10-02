@@ -28,23 +28,24 @@ The defaults map `/zone/1`–`/zone/4` to Universe 2 channels 1–4. The color s
 
 OSC listens on UDP `0.0.0.0:9000` by default. Companion feedback is sent to `127.0.0.1:9001`; change those values to match the Companion host and feedback listener.
 
-| Address | Arguments | Effect |
-| --- | --- | --- |
-| `/scene/recall` | integer `1`, `2`, or `3` | Immediately play the requested stored scene |
-| `/scene/capture` | integer `1`, `2`, or `3` | Persist a copy of the current incoming Universe 1 |
-| `/off` | none | Set Universe 1 to zero; leave Universe 2 unchanged |
-| `/zone/1` through `/zone/4` | number `0`–`100` | Set a zone percentage; values are clamped |
-| `/color/go` | none | Advance one color step |
-| `/status/request` | none | Send the complete current state |
-
-Zone percentages convert to DMX using `round(percent * 255 / 100)`. Invalid command arguments and malformed OSC packets are logged; unknown addresses are logged as warnings.
-
-State feedback is sent as it changes and on `/status/request`:
-
-- `/status/scene` with integer `1`–`3` or string `"off"`
-- `/status/zone/1` through `/status/zone/4` with the current percentage
-- `/status/color` with the color name or `"none"` before the first GO+
-- `/status/application` with `"ok"`
+| Address | Note |
+| --- | --- |
+| `/scene/recall` | Recall scene `1`, `2`, or `3`. |
+| `/scene/capture` | Save the current input as scene `1`, `2`, or `3`. |
+| `/off` | Turn off Universe 1. |
+| `/zone/1` | Set zone 1 to a percentage from `0` to `100`. |
+| `/zone/2` | Set zone 2 to a percentage from `0` to `100`. |
+| `/zone/3` | Set zone 3 to a percentage from `0` to `100`. |
+| `/zone/4` | Set zone 4 to a percentage from `0` to `100`. |
+| `/color/go` | Advance to the next color. |
+| `/status/request` | Request feedback for the current state. |
+| `/status/scene` | Scene feedback: `1`–`3` or `"off"`. |
+| `/status/zone/1` | Current percentage for zone 1. |
+| `/status/zone/2` | Current percentage for zone 2. |
+| `/status/zone/3` | Current percentage for zone 3. |
+| `/status/zone/4` | Current percentage for zone 4. |
+| `/status/color` | Current color name, or `"none"`. |
+| `/status/application` | Application feedback: `"ok"`. |
 
 ## Configuration and persistent data
 
