@@ -128,17 +128,24 @@ export class OutputEngine {
   off(): void {
     this.activeScene = 0;
     this.universe1 = new Uint8Array(UNIVERSE_SIZE);
+    for (const id of this.zonePercentages.keys()) this.zonePercentages.set(id, 0);
+    this.colorIndex = -1;
+    this.rebuildUniverse2();
     this.publish(1, Uint8Array.from(this.universe1));
+    this.publish(2, Uint8Array.from(this.universe2));
     this.emit({ type: "scene", scene: 0 });
+    for (const id of this.zonePercentages.keys()) this.emit({ type: "zone", id, percent: 0 });
+    this.emit({ type: "color", index: -1, name: "none" });
     this.logger.info("OFF activated");
   }
 
-  setZone(id: number, requestedPercent: number): void {
-    if (!Number.isFinite(requestedPercent)) {
-      throw new Error("Zone percentage must be a finite number");
+  adjustZone(id: number, direction: number): void {
+    if (!Number.isFinite(direction) || direction === 0) {
+      throw new Error("Zone adjustment must be a non-zero finite number");
     }
-    if (!this.zonePercentages.has(id)) throw new Error(`Unknown zone ${id}`);
-    const percent = Math.min(100, Math.max(0, requestedPercent));
+    const currentPercent = this.zonePercentages.get(id);
+    if (currentPercent === undefined) throw new Error(`Unknown zone ${id}`);
+    const percent = Math.min(100, Math.max(0, currentPercent + Math.sign(direction)));
     this.zonePercentages.set(id, percent);
     this.rebuildUniverse2();
     this.publish(2, Uint8Array.from(this.universe2));

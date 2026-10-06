@@ -11,6 +11,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/index.js",
     "dev": "tsx watch src/index.ts",
+    "test:sacn-output": "tsx src/sacn/phase-test.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

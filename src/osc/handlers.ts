@@ -43,10 +43,14 @@ export class OscCommandHandler {
       default: {
         const match = /^\/zone\/([1-4])$/.exec(message.address);
         if (match) {
-          if (message.args.length !== 1 || typeof message.args[0] !== "number") {
-            throw new Error(`${message.address} requires exactly one numeric percentage`);
+          if (
+            message.args.length !== 1 ||
+            typeof message.args[0] !== "number" ||
+            !Number.isFinite(message.args[0])
+          ) {
+            throw new Error(`${message.address} requires exactly one numeric adjustment of 1 or -1`);
           }
-          this.engine.setZone(Number(match[1]), message.args[0]);
+          this.engine.adjustZone(Number(match[1]), message.args[0]);
           return;
         }
         this.logger.warn("Unknown OSC address", { address: message.address });

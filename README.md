@@ -18,11 +18,11 @@ npm start
 
 ## Operation
 
-The application starts with Universe 1 OFF and Universe 2 black. It does not recall a previously active scene after restart. MA3 may continue to provide Universe 1 for captures, but its input is never sent directly to the output. A captured scene is copied into durable JSON storage before the capture command completes.
+The application starts with everything off (Universes 1 and 2 black). It does not recall a previously active scene after restart. MA3 may continue to provide Universe 1 for captures, but its input is never sent directly to the output. A captured scene is copied into durable JSON storage before the capture command completes.
 
-Universe 1 has Scene 1, Scene 2, Scene 3, and OFF. Scene recall has no fade. OFF zeros only Universe 1. Universe 2 is built from the four zone percentages and current color step; scene and OFF commands never change it. Channel mappings and color values live in `config/config.json`.
+Universe 1 has Scene 1, Scene 2, Scene 3, and OFF. Scene recall has no fade. OFF turns everything off: it zeros Universe 1, sets all four zones to 0%, and clears the color step so Universe 2 is black. Universe 2 is built from the four zone percentages and current color step; scene recall never changes it. Channel mappings and color values live in `config/config.json`.
 
-The defaults map `/zone/1`–`/zone/4` to Universe 2 channels 1–4. The color sequence writes RGB values to channels 5–7; all other Universe 2 channels remain zero. The sequence has twelve independently configurable steps and wraps at the end. Zone and color mappings are validated at startup, including range and overlap checks.
+The defaults map `/zone/1`–`/zone/4` to Universe 2 channels 1–4. Each zone has a software-managed dimmer level that starts at 0% and moves one percentage point per OSC message, clamped between 0% and 100%. Send a number `1` (integer or float) to brighten or `-1` to dim; only the sign is used. The level is scaled to DMX `0`–`255` and written to the zone channel immediately, so `/zone/1` drives Universe 2 channel 1. The color sequence writes RGB values to channels 5–7; all other Universe 2 channels remain zero. The sequence has twelve independently configurable steps and wraps at the end. Zone and color mappings are validated at startup, including range and overlap checks.
 
 ## OSC API
 
@@ -32,12 +32,13 @@ Companion and Stream Deck+ run on the same machine as this application, which ot
 | --- | --- |
 | `/scene/recall` | Recall scene `1`, `2`, or `3`. |
 | `/scene/capture` | Save the current input as scene `1`, `2`, or `3`. |
-| `/off` | Turn off Universe 1. |
-| `/zone/1` | Set zone 1 to a percentage from `0` to `100`. |
-| `/zone/2` | Set zone 2 to a percentage from `0` to `100`. |
-| `/zone/3` | Set zone 3 to a percentage from `0` to `100`. |
-| `/zone/4` | Set zone 4 to a percentage from `0` to `100`. |
+| `/off` | Turn everything off: Universe 1, all zones, and the color. |
+| `/zone/1` | Step zone 1 by one percentage point: `1` to brighten, `-1` to dim. |
+| `/zone/2` | Step zone 2 by one percentage point: `1` to brighten, `-1` to dim. |
+| `/zone/3` | Step zone 3 by one percentage point: `1` to brighten, `-1` to dim. |
+| `/zone/4` | Step zone 4 by one percentage point: `1` to brighten, `-1` to dim. |
 | `/color/go` | Advance to the next color. |
+| `/off` (feedback) | Sent to Companion whenever OFF fires, so its faders can reset to 0. |
 | `/status/request` | Request feedback for the current state. |
 | `/status/scene` | Scene feedback: `1`–`3` or `"off"`. |
 | `/status/zone/1` | Current percentage for zone 1. |
@@ -49,7 +50,7 @@ Companion and Stream Deck+ run on the same machine as this application, which ot
 
 ## Configuration and persistent data
 
-Edit `config/config.json` to change OSC endpoints, zone channels, color channel assignments, raw DMX color values, and wrap behavior. sACN input is Universe 1 and output is Universes 1 and 2. Set `sacn.bindAddress` to a local IPv4 address to select the lighting network interface for input and multicast output; `0.0.0.0` uses the operating system's default interface. The application intentionally rejects other universe layouts so scenes and front-truss output cannot be routed accidentally.
+Edit `config/config.json` to change OSC endpoints, zone channels, color channel assignments, raw DMX color values, and wrap behavior. sACN input is Universe 1 and output is Universes 1 and 2. Set `sacn.bindAddress` to an IPv4 address assigned to this computer to select the lighting network interface for input and multicast output; do not enter the lighting node's address. `0.0.0.0` uses the operating system's default interface. The application intentionally rejects other universe layouts so scenes and front-truss output cannot be routed accidentally.
 
 Three 512-byte scenes are stored as integer arrays in `data/scenes.json`. A missing scene file means all scenes are black. Writes go to a temporary file, are flushed with `fsync`, and are atomically renamed into place. Configuration or existing scene data that is invalid causes startup to fail with a logged error rather than being silently replaced.
 
@@ -64,6 +65,16 @@ Paths can be relocated with environment variables:
 | `SCENE_REPLAY_LOG_LEVEL` | `INFO` (`DEBUG`, `INFO`, `WARN`, or `ERROR`) |
 
 Logs are written to `logs/scene-replay.log` and the console. Routine sACN frames are not logged. The process records startup/configuration/network events, state changes, errors, and a one-minute health summary.
+
+## sACN output test
+
+Stop the normal Scene Replay controller before running this test to avoid competing sACN output. From the project directory, run:
+
+```sh
+npm run test:sacn-output
+```
+
+The test chases through Universe 2 one channel at a time: the active channel is at full (255), every other channel is 0, and it advances every 250 ms, wrapping from channel 512 to 1. The active channel number is printed. To chase only the first N channels, pass a count, for example `npm run test:sacn-output -- 16`. It uses the configured sACN bind address, does not transmit on Universe 1, and sends Universe 2 to black when stopped with Ctrl+C.
 
 ## Windows unattended startup
 

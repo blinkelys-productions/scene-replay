@@ -75,31 +75,19 @@ describe("OutputEngine", () => {
     expect(engine.getSnapshot().universe1).toHaveLength(512);
   });
 
-  it("sets OFF to black on Universe 1 without changing Universe 2", async () => {
-    const { engine } = await makeEngine();
-    engine.setZone(1, 50);
-    const universe2 = engine.getSnapshot().universe2;
+  it("turns off both universes, all zones and the color on OFF", async () => {
+    const { engine, publish } = await makeEngine();
+    for (let step = 0; step < 50; step += 1) engine.adjustZone(1, 1);
+    engine.colorGo();
     engine.receiveUniverse1(new Uint8Array(512).fill(255));
     await engine.captureScene(1);
     engine.recallScene(1);
     engine.off();
     expect(engine.getSnapshot().universe1).toEqual(new Uint8Array(512));
-    expect(engine.getSnapshot().universe2).toEqual(universe2);
-  });
-
-  it("clamps zones, rounds percentages to DMX and keeps zones independent", async () => {
-    const { engine } = await makeEngine();
-    engine.setZone(1, 0);
-    expect(engine.getSnapshot().universe2[0]).toBe(0);
-    engine.setZone(1, 50);
-    expect(engine.getSnapshot().universe2[0]).toBe(128);
-    engine.setZone(1, 100);
-    expect(engine.getSnapshot().universe2[0]).toBe(255);
-    expect([...engine.getSnapshot().universe2.slice(1, 4)]).toEqual([0, 0, 0]);
-    engine.setZone(1, -20);
-    expect(engine.getSnapshot().universe2[0]).toBe(0);
-    engine.setZone(1, 120);
-    expect(engine.getSnapshot().universe2[0]).toBe(255);
+    expect(engine.getSnapshot().universe2).toEqual(new Uint8Array(512));
+    expect(engine.getZonePercent(1)).toBe(0);
+    expect(engine.getSnapshot().colorName).toBeNull();
+    expect(publish).toHaveBeenCalledWith(2, new Uint8Array(512));
   });
 
   it("serializes simultaneous captures without losing updates to other scene slots", async () => {
@@ -128,9 +116,24 @@ describe("OutputEngine", () => {
     expect(engine.getSnapshot().colorName).toBe("Red");
   });
 
+  it("steps zones by one percentage point per adjustment and clamps at 0 and 100", async () => {
+    const { engine } = await makeEngine();
+    engine.adjustZone(1, -1);
+    expect(engine.getZonePercent(1)).toBe(0);
+    for (let step = 0; step < 50; step += 1) engine.adjustZone(1, 1.0);
+    expect(engine.getZonePercent(1)).toBe(50);
+    expect(engine.getSnapshot().universe2[0]).toBe(128);
+    for (let step = 0; step < 60; step += 1) engine.adjustZone(1, 1);
+    expect(engine.getZonePercent(1)).toBe(100);
+    engine.adjustZone(1, -1.0);
+    expect(engine.getZonePercent(1)).toBe(99);
+    expect(engine.getZonePercent(2)).toBe(0);
+    expect(() => engine.adjustZone(1, 0)).toThrow();
+  });
+
   it("does not let scene changes alter zones or color output", async () => {
     const { engine } = await makeEngine();
-    engine.setZone(1, 50);
+    for (let step = 0; step < 50; step += 1) engine.adjustZone(1, 1);
     engine.colorGo();
     const before = engine.getSnapshot().universe2;
     engine.receiveUniverse1(new Uint8Array(512).fill(42));

@@ -51,22 +51,25 @@ describe("OSC API", () => {
     engine.receiveUniverse1(new Uint8Array(512).fill(12));
     await handler.handle({ address: "/scene/capture", args: [1] });
     await handler.handle({ address: "/scene/recall", args: [1] });
-    await handler.handle({ address: "/zone/1", args: [50] });
+    await handler.handle({ address: "/zone/1", args: [1.0] });
+    await handler.handle({ address: "/zone/1", args: [1] });
+    await handler.handle({ address: "/zone/1", args: [-1.0] });
     await handler.handle({ address: "/color/go", args: [] });
     await handler.handle({ address: "/off", args: [] });
 
     expect(engine.getSnapshot().universe1).toEqual(new Uint8Array(512));
-    expect(engine.getSnapshot().universe2[0]).toBe(128);
+    expect(engine.getSnapshot().universe2).toEqual(new Uint8Array(512));
     expect(send).toHaveBeenCalledWith("/status/scene", 1);
-    expect(send).toHaveBeenCalledWith("/status/zone/1", 50);
+    expect(send).toHaveBeenCalledWith("/status/zone/1", 1);
     expect(send).toHaveBeenCalledWith("/status/color", "Red");
     expect(send).toHaveBeenCalledWith("/status/scene", "off");
+    expect(send).toHaveBeenCalledWith("/status/zone/4", 0);
+    expect(send).toHaveBeenLastCalledWith("/status/color", "none");
 
     send.mockClear();
     await handler.handle({ address: "/status/request", args: [] });
     expect(send).toHaveBeenCalledWith("/status/scene", "off");
-    expect(send).toHaveBeenCalledWith("/status/zone/1", 50);
-    expect(send).toHaveBeenCalledWith("/status/color", "Red");
+    expect(send).toHaveBeenCalledWith("/status/zone/1", 0);
     expect(send).toHaveBeenCalledWith("/status/application", "ok");
     expect(send).toHaveBeenCalledTimes(7);
   });

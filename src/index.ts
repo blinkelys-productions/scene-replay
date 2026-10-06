@@ -96,6 +96,7 @@ async function startController(): Promise<RunningController> {
       switch (event.type) {
         case "scene":
           osc?.send("/status/scene", event.scene === 0 ? "off" : event.scene);
+          if (event.scene === 0) osc?.send("/off");
           break;
         case "zone":
           osc?.send(`/status/zone/${event.id}`, event.percent);

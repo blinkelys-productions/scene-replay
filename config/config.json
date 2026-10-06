@@ -2,8 +2,8 @@
   "sacn": {
     "inputUniverse": 1,
     "outputUniverses": [1, 2],
-    "bindAddress": "0.0.0.0",
-    "refreshRateMs": 100
+    "bindAddress": "2.0.0.2",
+    "refreshRateMs": 25
   },
   "osc": {
     "listenAddress": "127.0.0.1",

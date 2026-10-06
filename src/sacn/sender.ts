@@ -42,7 +42,17 @@ export class SacnSender {
           socket.setMulticastTTL(1);
           socket.setMulticastLoopback(false);
           if (this.interfaceAddress !== "0.0.0.0") {
-            socket.setMulticastInterface(this.interfaceAddress);
+            try {
+              socket.setMulticastInterface(this.interfaceAddress);
+            } catch (error) {
+              if (isAddressNotAvailable(error)) {
+                throw new Error(
+                  `sacn.bindAddress ${this.interfaceAddress} is not assigned to a local network interface; set it to this machine's IPv4 address or use 0.0.0.0 to let the operating system choose`,
+                  { cause: error },
+                );
+              }
+              throw error;
+            }
           }
           resolve();
         } catch (error) {
@@ -111,4 +121,13 @@ export class SacnSender {
       if (error) this.logger.error("sACN packet send failed", { universe, error });
     });
   }
+}
+
+function isAddressNotAvailable(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "EADDRNOTAVAIL"
+  );
 }
